@@ -1,7 +1,9 @@
 package com.gmail.robertosrjr.organic.store.service;
 
+import com.gmail.robertosrjr.organic.store.client.ProviderClient;
 import com.gmail.robertosrjr.organic.store.controller.dto.BuyDto;
 import com.gmail.robertosrjr.organic.store.controller.dto.FornecedorDto;
+import feign.FeignException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
@@ -16,28 +18,19 @@ import java.lang.reflect.Method;
 @Service
 public class BuyService {
 
-    @Autowired
-    private RestTemplate client;
-
-    @Autowired
-    private DiscoveryClient discoveryClient;
-
     @Value("${provider.url}")
     private String providerApi;
+
+    @Autowired
+    private ProviderClient providerClient;
 
     public void buy(BuyDto buy) {
 
         try {
-
-            ResponseEntity<FornecedorDto> response =
-                    client.exchange(providerApi.concat("/provider/".concat(buy.getAddress().getUf())),
-                            HttpMethod.GET,null, FornecedorDto.class);
-
-            discoveryClient.getInstances("provider").stream()
-                    .forEach(provider -> {
-                        System.out.println("localhost:" + provider.getPort());
-                    });
-        } catch (HttpClientErrorException e) {
+            FornecedorDto providerDto =
+                    this.providerClient.getInfoFornecedorByUf(buy.getAddress().getUf());
+            System.out.println(providerDto);
+        } catch (FeignException e) {
             e.printStackTrace();
         }
     }
